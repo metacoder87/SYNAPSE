@@ -1,0 +1,22 @@
+# Regex Kill Switch rules (P3.1) — editable without code changes.
+# All patterns are case-insensitive regexes matched against "title + description".
+#
+#   include: at least ONE must match, or the job is discarded
+#   exclude: if ANY matches, the job is discarded (checked after include)
+#   exclude_title_only: like exclude, but matched against the title alone
+#     (avoids discarding a good role whose description merely *mentions* a term)
+
+include:
+  - '\barchitect'
+  - '\b(ai|artificial intelligence|machine learning|ml|llm)\b.*\b(strateg|platform|enterprise|principal|chief)'
+  - '\b(principal|staff|chief|head of|director)\b.*\b(ai|ml|machine learning)\b'
+
+exclude:
+  - '\b(on-?site only|onsite only|no remote|hybrid required)\b'
+  - '\bcitizenship:?\s*required.*not.*sponsor'
+  - '\b(unpaid|volunteer|internship)\b'
+
+exclude_title_only:
+  - '\b(junior|jr\.?|intern|entry.?level|associate)\b'
+  - '\b(landscape|data center|solutions? consultant)\b'
+  - '\bsalesforce\b'
