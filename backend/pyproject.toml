@@ -1,6 +1,6 @@
 [project]
 name = "synapse-backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "Project SYNAPSE — job sourcing, matching, and deep-research backend"
 requires-python = ">=3.11"
 dependencies = [
@@ -15,6 +15,15 @@ dependencies = [
     "apscheduler>=3.10",
     "chromadb>=0.5",
     "sentence-transformers>=3.0",
+    "markdownify>=0.12",
+    "pyyaml>=6.0",
+    "crewai>=0.100",
+    "ddgs>=6.0",
+    "prometheus-client>=0.20",
+    "prometheus-fastapi-instrumentator>=7.0",
+    "arize-phoenix-otel>=0.6",
+    "openinference-instrumentation-crewai>=0.1",
+    "openinference-instrumentation-litellm>=0.1",
 ]
 
 [project.optional-dependencies]

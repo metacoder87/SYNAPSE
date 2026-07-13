@@ -34,6 +34,90 @@ services:
       timeout: 5s
       retries: 10
 
+
+  # ---------------- Application (start with: docker compose --profile app up -d --build)
+
+  backend:
+    build: ./backend
+    container_name: synapse-backend
+    profiles: ["app"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-synapse}:${POSTGRES_PASSWORD:-synapse_dev}@postgres:5432/${POSTGRES_DB:-synapse}
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      PHOENIX_ENDPOINT: http://phoenix:6006/v1/traces
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/profile:/app/profile
+      - ./backend/filter_rules.yaml:/app/filter_rules.yaml:ro
+      - synapse_hf:/root/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: synapse-frontend
+    profiles: ["app"]
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # ---------------- Observability (PRD §7) ----------------
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: synapse-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - synapse_prom:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: synapse-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: synapse
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - synapse_grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: synapse-phoenix
+    ports:
+      - "6006:6006"   # UI + OTLP HTTP collector
+      - "4317:4317"   # OTLP gRPC collector
+    volumes:
+      - synapse_phoenix:/mnt/data
+
 volumes:
+  synapse_hf:
   synapse_pgdata:
   synapse_chroma:
+  synapse_prom:
+  synapse_grafana:
+  synapse_phoenix:
