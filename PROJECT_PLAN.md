@@ -1,5 +1,7 @@
 # Project SYNAPSE — Build Plan
 
+> **STATUS: Phases 0–9 complete (v1.0.0).** All PRD sections implemented and verified on target hardware.
+
 Task-level roadmap following the blueprint (PRD) section order. Each phase lists tasks with acceptance criteria (AC). Databases run in Docker; Phase 0 verifies local AI hardware before anything is built around it.
 
 **Legend:** ☐ pending · Each task ID (e.g., `P2.3`) can be referenced when we start work.
