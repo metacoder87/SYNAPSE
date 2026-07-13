@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: synapse
+    folder: SYNAPSE
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
