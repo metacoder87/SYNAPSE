@@ -3,13 +3,21 @@
   "uid": "synapse-ops",
   "timezone": "browser",
   "refresh": "30s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "panels": [
     {
       "id": 1,
       "title": "API Request Rate (req/s)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
       "targets": [
         {
           "expr": "sum(rate(http_requests_total[5m])) by (handler)",
@@ -21,7 +29,12 @@
       "id": 2,
       "title": "API Latency p95 (s)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, handler))",
@@ -33,7 +46,12 @@
       "id": 3,
       "title": "Ingest Runs by Outcome",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
       "targets": [
         {
           "expr": "sum(increase(synapse_ingest_runs_total[1h])) by (provider, outcome)",
@@ -45,16 +63,28 @@
       "id": 4,
       "title": "Jobs Created (24h)",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
       "targets": [
-        { "expr": "sum(increase(synapse_jobs_created_total[24h]))" }
+        {
+          "expr": "sum(increase(synapse_jobs_created_total[24h]))"
+        }
       ]
     },
     {
       "id": 5,
       "title": "Freshness Workers (affected rows, 24h)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
       "targets": [
         {
           "expr": "sum(increase(synapse_freshness_affected_total[24h])) by (worker)",
@@ -66,7 +96,12 @@
       "id": 6,
       "title": "Deep-Dive Dossiers by Status (24h)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
       "targets": [
         {
           "expr": "sum(increase(synapse_dossiers_total[24h])) by (status)",
@@ -78,12 +113,61 @@
       "id": 7,
       "title": "Dossier Generation Duration p95 (s)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.95, sum(rate(synapse_dossier_duration_seconds_bucket[6h])) by (le))"
         }
       ]
+    },
+    {
+      "id": 8,
+      "title": "Dossier Citation Coverage p50 (7d)",
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(synapse_dossier_citation_coverage_bucket[7d])) by (le))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Dossier Verified Ratio p50 (7d)",
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(synapse_dossier_verified_ratio_bucket[7d])) by (le))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1
+        }
+      }
     }
   ],
   "schemaVersion": 39

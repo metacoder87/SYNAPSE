@@ -21,9 +21,11 @@ if [ ! -f .env ]; then
   echo "Created .env from template — ADD YOUR API KEYS to .env"
 fi
 
-# --- 3. Containers
+# --- 3. Containers (infra only — backend/frontend run locally below for
+#        hot reload; `docker compose up -d` alone would also start the
+#        dockerized backend/frontend and collide with them on the same ports)
 echo; echo "Starting containers..."
-docker compose up -d
+docker compose up -d postgres chromadb prometheus grafana phoenix
 
 # --- 4. Backend
 echo; echo "Setting up backend..."

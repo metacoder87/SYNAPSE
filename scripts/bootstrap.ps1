@@ -25,9 +25,11 @@ if (-not (Test-Path ".env")) {
     Write-Host "Created .env from template — ADD YOUR API KEYS to .env" -ForegroundColor Yellow
 }
 
-# --- 3. Containers (Postgres, Chroma, Prometheus, Grafana, Phoenix) ---------
+# --- 3. Containers (infra only — backend/frontend run locally below for
+#        hot reload; `docker compose up -d` alone would also start the
+#        dockerized backend/frontend and collide with them on the same ports)
 Write-Host "`nStarting containers..." -ForegroundColor Cyan
-docker compose up -d
+docker compose up -d postgres chromadb prometheus grafana phoenix
 
 # --- 4. Backend ---------------------------------------------------------------
 Write-Host "`nSetting up backend..." -ForegroundColor Cyan

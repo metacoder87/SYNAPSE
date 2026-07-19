@@ -29,6 +29,16 @@ try:
         "Deep-dive generation wall time",
         buckets=(30, 60, 120, 240, 480, 960, 1920),
     )
+    DOSSIER_CITATION_COVERAGE = Histogram(
+        "synapse_dossier_citation_coverage",
+        "Fraction of dossier claims that cite evidence",
+        buckets=(0.2, 0.4, 0.6, 0.8, 0.9, 1.0),
+    )
+    DOSSIER_VERIFIED_RATIO = Histogram(
+        "synapse_dossier_verified_ratio",
+        "Fraction of dossier claims verified as supported",
+        buckets=(0.2, 0.4, 0.6, 0.8, 0.9, 1.0),
+    )
     ENABLED = True
 except ImportError:  # pragma: no cover
     ENABLED = False
@@ -54,6 +64,12 @@ def record_dossier(status: str, duration_seconds: float) -> None:
     if ENABLED:
         DOSSIERS.labels(status=status).inc()
         DOSSIER_DURATION.observe(duration_seconds)
+
+
+def record_dossier_quality(citation_coverage: float, verified_ratio: float) -> None:
+    if ENABLED:
+        DOSSIER_CITATION_COVERAGE.observe(citation_coverage)
+        DOSSIER_VERIFIED_RATIO.observe(verified_ratio)
 
 
 def instrument_app(app) -> None:
