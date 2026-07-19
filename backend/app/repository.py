@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.job import Job, JobStatus
-from app.models.orm import JobRow
+from app.models.orm import JobRow, StatusEventRow
 
 # Columns an adapter is allowed to refresh on re-ingest. Status and lifecycle
 # fields are deliberately excluded so a re-scraped posting never clobbers
@@ -38,7 +38,9 @@ async def upsert_job(session: AsyncSession, job: Job) -> tuple[uuid.UUID, bool]:
 
     Returns (job_id, created) where created=True for a new row.
     """
-    values = job.model_dump(exclude={"id", "last_verified_at", "updated_at"}, exclude_none=False)
+    values = job.model_dump(
+        exclude={"id", "last_verified_at", "updated_at", "first_seen_at"}, exclude_none=False
+    )
     values["system_status"] = job.system_status.value
 
     stmt = pg_insert(JobRow).values(**values)
@@ -70,7 +72,9 @@ async def get_active_jobs(session: AsyncSession, limit: int = 100, offset: int =
     return [Job.model_validate(r) for r in rows]
 
 
-async def set_status(session: AsyncSession, job_id: uuid.UUID, status: JobStatus) -> bool:
+async def set_status(
+    session: AsyncSession, job_id: uuid.UUID, status: JobStatus, note: str | None = None
+) -> bool:
     stmt = (
         update(JobRow)
         .where(JobRow.id == job_id)
@@ -78,8 +82,28 @@ async def set_status(session: AsyncSession, job_id: uuid.UUID, status: JobStatus
         .returning(JobRow.id)
     )
     result = await session.execute(stmt)
+    found = result.scalar_one_or_none() is not None
+    if found:
+        session.add(StatusEventRow(job_id=job_id, event_type="status", status=status, note=note))
     await session.commit()
-    return result.scalar_one_or_none() is not None
+    return found
+
+
+async def add_note(session: AsyncSession, job_id: uuid.UUID, note: str) -> bool:
+    if await session.get(JobRow, job_id) is None:
+        return False
+    session.add(StatusEventRow(job_id=job_id, event_type="note", note=note))
+    await session.commit()
+    return True
+
+
+async def list_events(session: AsyncSession, job_id: uuid.UUID) -> list[StatusEventRow]:
+    stmt = (
+        select(StatusEventRow)
+        .where(StatusEventRow.job_id == job_id)
+        .order_by(StatusEventRow.created_at.desc())
+    )
+    return list((await session.execute(stmt)).scalars().all())
 
 
 async def expire_past_closing(session: AsyncSession) -> int:
