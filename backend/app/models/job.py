@@ -57,6 +57,7 @@ class Job(BaseModel):
     system_status: JobStatus = JobStatus.ACTIVE
     last_verified_at: datetime | None = None
     updated_at: datetime | None = None
+    first_seen_at: datetime | None = None
 
     # Overflow Safety Net
     raw_metadata: dict | None = None
@@ -77,7 +78,7 @@ class Job(BaseModel):
             raise ValueError("salary cannot be negative")
         return v
 
-    @field_validator("posted_at", "closing_date", "last_verified_at", "updated_at")
+    @field_validator("posted_at", "closing_date", "last_verified_at", "updated_at", "first_seen_at")
     @classmethod
     def datetime_must_be_aware(cls, v: datetime | None) -> datetime | None:
         """Naive datetimes are assumed UTC (many boards omit offsets)."""

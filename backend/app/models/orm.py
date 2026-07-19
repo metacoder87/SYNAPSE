@@ -68,6 +68,11 @@ class JobRow(Base):
         DateTime(timezone=True), server_default=text("now()"), nullable=False
     )
 
+    # U3: when SYNAPSE first ingested this job (our reliable clock)
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()"), nullable=False
+    )
+
     # The Overflow Safety Net (Schema-on-Read)
     raw_metadata: Mapped[dict | None] = mapped_column(JSONB)
 
@@ -79,6 +84,50 @@ class DossierRow(Base):
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), server_default="running")
+    content_markdown: Mapped[str | None] = mapped_column(Text)
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()"), nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Phase 10: verifiable research
+    evidence: Mapped[list | None] = mapped_column(JSONB)
+    verdicts: Mapped[list | None] = mapped_column(JSONB)
+    prompt_version: Mapped[str | None] = mapped_column(String(20))
+    citation_coverage: Mapped[float | None] = mapped_column(Numeric)
+    verified_ratio: Mapped[float | None] = mapped_column(Numeric)
+    # E2: live pipeline stage while running
+    progress: Mapped[str | None] = mapped_column(String(120))
+
+
+class StatusEventRow(Base):
+    __tablename__ = "status_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(20), server_default="status")
+    status: Mapped[JobStatus | None] = mapped_column(
+        Enum(JobStatus, name="job_status", values_callable=lambda e: [m.value for m in e],
+             create_type=False)
+    )
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()"), nullable=False
+    )
+
+
+class ArtifactRow(Base):
+    __tablename__ = "artifacts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), server_default="running")
     content_markdown: Mapped[str | None] = mapped_column(Text)
     error: Mapped[str | None] = mapped_column(Text)
