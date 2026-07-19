@@ -8,7 +8,7 @@ function scoreColor(score: number | null): string {
   return "text-gray-400 border-gray-600";
 }
 
-export default function JobCard({ job }: { job: Job }) {
+export default function JobCard({ job, isNew = false }: { job: Job; isNew?: boolean }) {
   const salary = formatSalary(job);
   const closing = job.closing_date
     ? new Date(job.closing_date).toLocaleDateString()
@@ -23,7 +23,15 @@ export default function JobCard({ job }: { job: Job }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-bold text-gray-100">{job.title}</h2>
+          <h2 className="truncate text-lg font-bold text-gray-100">
+            {isNew && (
+              <span data-testid="new-badge"
+                    className="mr-2 border border-cyber-magenta px-1.5 py-0.5 align-middle text-[10px] font-bold text-cyber-magenta shadow-glow-magenta">
+                NEW
+              </span>
+            )}
+            {job.title}
+          </h2>
           <p className="text-sm text-cyber-magenta">{job.company}</p>
           <p className="mt-1 text-xs text-gray-500">
             {job.location_string ?? "—"} · {job.source_provider}
