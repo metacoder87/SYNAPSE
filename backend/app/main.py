@@ -4,12 +4,14 @@ import logging
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import metrics
 from app import scheduler as scheduler_module
 from app.api import router as api_router
+from app.settings_api import router as settings_router
 from app.config import settings
 from app.ingest import run_all, run_provider
 
@@ -21,9 +23,13 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.artifacts import sweep_orphaned as sweep_artifacts
+    from app.dossiers import sweep_orphaned
     from app.tracing import init_tracing
 
     init_tracing()
+    await sweep_orphaned()
+    await sweep_artifacts()
     if settings.scheduler_enabled:
         scheduler_module.start()
     yield
@@ -46,6 +52,20 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(settings_router)
+
+# E6: single-user bearer-token auth (enabled by setting AUTH_TOKEN in .env).
+# /health and /metrics stay open for probes and Prometheus.
+_AUTH_EXEMPT = {"/health", "/metrics"}
+
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    token = settings.auth_token
+    if token and request.url.path not in _AUTH_EXEMPT:
+        if request.headers.get("authorization") != f"Bearer {token}":
+            return JSONResponse({"detail": "unauthorized"}, status_code=401)
+    return await call_next(request)
 metrics.instrument_app(app)
 
 
