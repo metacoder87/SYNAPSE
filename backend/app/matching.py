@@ -26,6 +26,9 @@ def refresh_profile() -> dict:
         metadatas=[{"path": str(PROFILE_PATH)}],
     )
     _profile_embedding = embedding
+    invalidate_sentences = True  # noqa: F841
+    globals()["_profile_sentences"] = None
+    globals()["_profile_sentence_vecs"] = None
     logger.info("candidate profile re-embedded (%d chars)", len(text))
     return {"status": "ok", "profile_chars": len(text), "vector_dim": len(embedding)}
 
@@ -66,5 +69,52 @@ def score_job_text(title: str, description: str) -> tuple[float | None, list[flo
 
 
 def invalidate_profile_cache() -> None:
-    global _profile_embedding
+    global _profile_embedding, _profile_sentences, _profile_sentence_vecs
     _profile_embedding = None
+    _profile_sentences = None
+    _profile_sentence_vecs = None
+
+
+# ---------------------------------------------------------------- U1: why this score
+
+_profile_sentences: list[str] | None = None
+_profile_sentence_vecs: list[list[float]] | None = None
+
+
+def _profile_sentence_index() -> tuple[list[str], list[list[float]]]:
+    global _profile_sentences, _profile_sentence_vecs
+    if _profile_sentences is None:
+        import re
+
+        from app.embedding import embed_texts
+
+        text = PROFILE_PATH.read_text(encoding="utf-8")
+        text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+        raw = re.split(r"(?<=[.!?])\s+|\n+", text)
+        sentences = [
+            s.strip().lstrip("#").strip()
+            for s in raw
+            if len(s.strip()) > 40 and not s.strip().startswith("#")
+        ]
+        _profile_sentences = sentences[:60]
+        _profile_sentence_vecs = embed_texts(_profile_sentences) if _profile_sentences else []
+    return _profile_sentences, _profile_sentence_vecs
+
+
+def explain_score(title: str, description: str, top_k: int = 3) -> list[dict]:
+    """Top profile phrases driving this job's Alignment Score (U1)."""
+    from app.embedding import cosine_similarity, embed_text
+
+    sentences, vecs = _profile_sentence_index()
+    if not sentences:
+        return []
+    job_vec = embed_text(f"{title}\n\n{description[:4000]}")
+    scored = sorted(
+        (
+            {"phrase": s, "similarity": round(cosine_similarity(job_vec, v), 3)}
+            for s, v in zip(sentences, vecs)
+        ),
+        key=lambda d: d["similarity"],
+        reverse=True,
+    )
+    return scored[:top_k]

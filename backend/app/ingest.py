@@ -14,7 +14,7 @@ from app.adapters import all_adapters, get_adapter
 from app.adapters.base import SourceAdapter
 from app.db import SessionLocal
 from app.filtering import kill_switch
-from app import matching, metrics, repository, vector
+from app import enrich, matching, metrics, repository, vector
 
 logger = logging.getLogger("synapse.ingest")
 
@@ -26,6 +26,7 @@ class IngestStats:
     parsed: int = 0
     parse_failed: int = 0
     filtered: int = 0
+    enriched: int = 0
     created: int = 0
     refreshed: int = 0
     persist_failed: int = 0
@@ -47,6 +48,11 @@ async def run_one(adapter: SourceAdapter) -> IngestStats:
     stats.parsed = result.parsed
     stats.parse_failed = result.failed
 
+    enrich_client = httpx.AsyncClient(
+        timeout=20,
+        follow_redirects=True,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; SYNAPSE/1.0)"},
+    )
     async with SessionLocal() as session:
         for job in result.jobs:
             # --- Regex Kill Switch (P3.1): discard before spending compute
@@ -55,6 +61,15 @@ async def run_one(adapter: SourceAdapter) -> IngestStats:
                 stats.filtered += 1
                 logger.info("KILL [%s] %s — %s", adapter.provider, job.title[:60], reason)
                 continue
+
+            # --- Full-description enrichment (snippet-only sources)
+            if enrich.should_enrich(job):
+                try:
+                    if await enrich.enrich_job(enrich_client, job):
+                        stats.enriched += 1
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("enrich skipped for %s — %s",
+                                 job.external_reference_id, str(exc)[:150])
 
             # --- Alignment Score (P3.3/P3.4)
             embedding: list[float] | None = None
@@ -94,6 +109,7 @@ async def run_one(adapter: SourceAdapter) -> IngestStats:
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("vector store failed for %s — %s", job_id, str(exc)[:200])
 
+    await enrich_client.aclose()
     metrics.record_ingest(adapter.provider, stats.created, stats.filtered, error=False)
     logger.info("ingest %s: %s", adapter.provider, asdict(stats))
     return stats

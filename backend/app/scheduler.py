@@ -9,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import settings
 from app.freshness import daily_expiry, heartbeat, weekly_purge
+from app.notify import daily_digest
 from app.ingest import run_all
 
 logger = logging.getLogger("synapse.scheduler")
@@ -42,6 +43,9 @@ def start() -> None:
     )
     scheduler.add_job(
         weekly_purge, CronTrigger(day_of_week="sun", hour=7, minute=0), id="weekly_purge"
+    )
+    scheduler.add_job(
+        daily_digest, CronTrigger(hour=settings.digest_hour, minute=0), id="daily_digest"
     )
     scheduler.start()
     logger.info(
