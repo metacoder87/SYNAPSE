@@ -1,0 +1,46 @@
+# R4.1 — Golden set for dossier accuracy evaluation.
+# Facts chosen for stability (founding year, HQ city, industry). Add or
+# correct entries freely; the eval script string-matches these against
+# generated claims to flag potential contradictions for human review.
+
+companies:
+  - name: Microsoft
+    facts:
+      founded: "1975"
+      hq: "Redmond"
+      industry: "software"
+  - name: Netflix
+    facts:
+      founded: "1997"
+      hq: "Los Gatos"
+      industry: "streaming"
+  - name: Shopify
+    facts:
+      founded: "2006"
+      hq: "Ottawa"
+      industry: "e-commerce"
+  - name: Datadog
+    facts:
+      founded: "2010"
+      hq: "New York"
+      industry: "monitoring"
+  - name: GitLab
+    facts:
+      founded: "2014"
+      hq: "all-remote"
+      industry: "devops"
+  - name: Cloudflare
+    facts:
+      founded: "2009"
+      hq: "San Francisco"
+      industry: "network"
+  - name: HashiCorp
+    facts:
+      founded: "2012"
+      hq: "San Francisco"
+      industry: "infrastructure"
+  - name: Duolingo
+    facts:
+      founded: "2011"
+      hq: "Pittsburgh"
+      industry: "education"
