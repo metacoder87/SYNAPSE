@@ -37,7 +37,7 @@ Postgres and ChromaDB together.
 ### Option A — everything in Docker (one command)
 
 ```
-docker compose --profile app up -d --build
+docker compose up -d --build
 ```
 
 Builds and starts all seven containers: Postgres, ChromaDB, the FastAPI
@@ -81,6 +81,19 @@ changes required:
    ingest interval, alignment threshold, model selection.
 4. **`scripts/calibrate_threshold.py`** — after your first real ingest, run
    this to see the score distribution and pick `ALIGNMENT_THRESHOLD`.
+
+## Settings, Auth & Exports
+
+- **⚙ Settings page** (`/settings` in the dashboard): edit the candidate
+  profile, master resume, and filter rules in the browser — validated, saved
+  to the same files, re-embedded/reloaded automatically.
+- **Auth**: set `AUTH_TOKEN` in `.env` to require a Bearer token on every API
+  call (paste the same token in Settings → API Token). Leave empty for
+  localhost-only use. `/health` and `/metrics` stay open.
+- **Exports** (Settings page): pipeline CSV and full JSON backup (jobs,
+  timeline, dossiers, artifacts).
+- **Typed client generation**: `npm run gen:api` (backend must be running)
+  writes `src/lib/openapi.d.ts` from the live OpenAPI schema.
 
 ## Operations
 
